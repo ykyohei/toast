@@ -108,15 +108,24 @@ def main():
     noiseweighted_sum = None
     invcov_sum = None
     nnz, nnz2, npix = None, None, None
-    nfile = len(args.inmap)
-    for ifile, infile_map in enumerate(args.inmap):
+    if len(args.inmap) == 1:
+        # A file listing the maps to coadd
+        infiles = open(args.inmap[0], "r").read().splitlines()
+    else:
+        infiles = args.inmap
+
+    nfile = len(infiles)
+    nread = 0
+    nread_tot = len(np.arange(nfile)[rank::ntask])
+    for ifile, infile_map in enumerate(infiles):
         if ntask == 1:
             prefix = ""
         else:
             prefix = f"{rank:4} : "
         if ifile % ntask != rank:
             continue
-        log.info(f"{prefix}Loading file {ifile + 1} / {nfile} : {infile_map}")
+        nread += 1
+        log.info(f"{prefix}Loading file {nread} / {nread_tot} : {infile_map}")
         inmap = read_healpix(infile_map, None, nest=True, dtype=float)
         if nnz is None:
             nnz, npix = inmap.shape
