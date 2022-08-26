@@ -2016,6 +2016,10 @@ class OpMapMaker(Operator):
         dist_map.allreduce()
         if self.rank == 0:
             timer.report_clear("  Build noise-weighted map")
+            # temporary hack for SA pipeline
+            fname = os.path.join(self.outdir, self.outprefix + "noise_weighted" + ".fits")
+            dist_map.write_healpix_fits(fname)
+            # temporary hack for SA pipeline
 
         covariance_apply(self.white_noise_cov_matrix, dist_map)
         if self.rank == 0:
@@ -2141,9 +2145,10 @@ class OpMapMaker(Operator):
                 timer.report_clear("Write rcond")
 
         # Invert the white noise covariance in each pixel
-        covariance_invert(self.white_noise_cov_matrix, self.rcond_limit)
-        if self.rank == 0:
-            timer.report_clear("Invert N_pp'^1")
+        if self.write_wcov:
+            covariance_invert(self.white_noise_cov_matrix, self.rcond_limit)
+            if self.rank == 0:
+                timer.report_clear("Invert N_pp'^1")
 
         if self.write_wcov:
             fname = os.path.join(self.outdir, self.outprefix + "npp.fits")
